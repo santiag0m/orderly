@@ -64,7 +64,7 @@ def check_datetime(srs):
     except:
         return None
     
-def check_numeric(srs):
+def check_numeric(srs, tol=0.05):
     
     if(srs.dtype == np.float64 or srs.dtype == np.int64):
         return srs
@@ -73,8 +73,18 @@ def check_numeric(srs):
     
     srs = srs.str.replace(',','.')
     try:
-        srs = pd.to_numeric(srs)
-        return srs
+        srs = pd.to_numeric(srs, errors='coerce')
+        inv = np.sum(srs.isnull().values)
+        inv = inv/len(srs)
+        if(inv==0):
+            return srs
+        elif (inv < tol):
+            print('ORDERLY WARNING: {} : {:.2f}% of data was assigned NaN'.format(srs.name, inv*100))
+            return srs
+        else:
+            if (inv < 1):
+                print('ORDERLY WARNING: {} : Not numeric due to too much NaN values {:.2f}%'.format(srs.name, inv*100))
+            return None
     except:
         return None
 
