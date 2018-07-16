@@ -25,8 +25,8 @@ def check_boolean(srs, null_val = False):
         if (len(vc)==2):
             # Only two posible values -> boolean variable
             try:
-                srs.loc[~srs.isnull()] = srs.loc[~srs.isnull()].apply(lambda x: bool_eq[x])
-                srs.loc[srs.isnull()]=null_val
+                srs.loc[~srs.isna()] = srs.loc[~srs.isna()].apply(lambda x: bool_eq[x])
+                srs = srs.fillna(null_val)
                 return srs
             except:
                 return None
@@ -39,8 +39,8 @@ def check_boolean(srs, null_val = False):
         if (len(vc)==2):
             # Only two posible values -> boolean variable
             try:
-                srs.loc[~srs.isnull()] = srs.loc[~srs.isnull()].apply(lambda x: True if x!=0 else False)
-                srs.loc[srs.isnull()]=null_val
+                srs.loc[~srs.isna()] = srs.loc[~srs.isna()].apply(lambda x: True if x!=0 else False)
+                srs = srs.fillna(null_val)
                 return srs
             except(KeyError):
                 print('%s has two possible values but could not be converted' % srs.name)
@@ -74,7 +74,7 @@ def check_numeric(srs, tol=0.05):
     srs = srs.str.replace(',','.')
     try:
         srs = pd.to_numeric(srs, errors='coerce')
-        inv = np.sum(srs.isnull().values)
+        inv = np.sum(srs.isna().values)
         inv = inv/len(srs)
         if(inv==0):
             return srs
@@ -99,7 +99,7 @@ def assign_types(df):
         cols = list(dfn.columns)
         
         for c in cols:
-            srs = dfn[c]
+            srs = dfn.loc[:,c].copy()
             
             assigned = False
             btemp = check_boolean(srs)
