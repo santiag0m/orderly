@@ -66,7 +66,7 @@ def check_datetime(srs):
     
 def check_numeric(srs, tol=0.05):
     
-    if(srs.dtype == np.float64 or srs.dtype == np.int64):
+    if(srs.dtype == np.float64 or srs.dtype == np.int64 or srs.dtype == np.uint8):
         return srs
     if(srs.dtype != np.object):
         return None
@@ -88,8 +88,20 @@ def check_numeric(srs, tol=0.05):
     except:
         return None
 
+def boolean2int(df):
+    dfn = df.copy()
+    dts = dfn.dtypes
+    bool_vars = list(dts[dts=='bool'].index)
+    
+    for var in bool_vars:
+        dfn[var] = dfn[var].apply(lambda x: 1 if x else 0)
+        dfn[var] = dfn[var].astype('uint8')
+    
+    return dfn
+    
+    
 
-def assign_types(df):
+def assign_types(df, verbose=True):
     
     dfn = df.copy()
     
@@ -108,21 +120,24 @@ def assign_types(df):
             
             if(btemp is not None):
                 dfn.loc[:,c] = btemp.astype('bool')
-                print('%s was converted to boolean' % c)
+                if verbose:
+                    print('%s was converted to boolean' % c)
                 assigned = True
             else:
                 ntemp = check_numeric(srs)
                 
             if(ntemp is not None):
                 dfn.loc[:,c] = ntemp
-                print('%s was converted to numeric' % c)
+                if verbose:
+                    print('%s was converted to numeric' % c)
                 assigned = True
             else:
                 dtemp = check_datetime(srs)
             
             if(dtemp is not None):
                 dfn.loc[:,c] = dtemp
-                print('%s was converted to datetime' % c)
+                if verbose:
+                    print('%s was converted to datetime' % c)
                 assigned = True
             
             if(not assigned):
@@ -130,13 +145,14 @@ def assign_types(df):
                 
         
         if len(unassigned)>0:
-            print('\n')
-            print('--------------------------------------------')
-            print('UNASSIGNED VARIABLES:')
-            print('--------------------------------------------')
-            print('\n')
-            for c in unassigned:
-                print(c)
+            if verbose:
+                    print('\n')
+                    print('--------------------------------------------')
+                    print('UNASSIGNED VARIABLES:')
+                    print('--------------------------------------------')
+                    print('\n')
+                    for c in unassigned:
+                        print(c)
         
         return dfn
     except (AttributeError):
@@ -146,19 +162,22 @@ def assign_types(df):
         dtemp = None    
         
         if(btemp is not None):
-            print('%s was converted to boolean' % dfn.name)
+            if verbose:
+                    print('%s was converted to boolean' % dfn.name)
             return btemp.astype('bool')
         else:
             ntemp = check_numeric(dfn)
             
         if(ntemp is not None):
-            print('%s was converted to numeric' % c)
+            if verbose:
+                    print('%s was converted to numeric' % c)
             return ntemp
         else:
             dtemp = check_datetime(dfn)
         
         if(dtemp is not None):
-            print('%s was converted to datetime' % c)
+            if verbose:
+                    print('%s was converted to datetime' % c)
             return dtemp
         
                 
