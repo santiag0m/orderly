@@ -1,12 +1,69 @@
 # -*- coding: utf-8 -*-
 """
-Collection of functions for data cleaning
+Collection of functions for data cleaning and analysis
 
 @author: santiag0m
 """
 
 import numpy as np
 import pandas as pd
+import scipy.stats as scs
+
+def join_tables(dfs, set_index=None):
+    dfs = list(dfs)
+    cum_vars = set()
+    if set_index is not None:
+        if isinstance(set_index, str):
+            set_index = [set_index]*len(dfs)
+    for i, df in enumerate(dfs):
+        index = ''
+        if set_index is not None:
+            index = set_index[i]
+            df = df.drop_duplicates(index, keep=False)
+            df = df.set_index(index)
+            df_vars = list(df.columns)
+        for v in df_vars:
+            if v!= index:
+                if v in cum_vars:
+                    df = df.drop(v, axis=1)
+        cum_vars.update(df_vars)
+        if i==0:
+            res = df
+        else:
+            res_idx = res.index
+            df_idx = df.index
+            t_idx = res_idx.intersection(df_idx)
+            res = pd.concat([res.loc[t_idx,:], df.loc[t_idx,:]], 
+                            axis=1, sort=True)
+    return res
+
+def chi2(df_col1, df_col2):
+    freq1 = df_col1.astype('object').value_counts()
+    freq2 = df_col2.astype('object').value_counts()
+    
+    idxs1 = list(freq1.index)
+    idxs2 = list(freq2.index)
+    
+    idxs = [x for x in idxs1 if x not in idxs2]
+    
+    for idx in idxs:
+        temp = pd.Series([0],index=[idx])
+#        temp.index = temp.index.astype('object')
+        freq2 = freq2.append(temp)
+        
+    idxs = [x for x in idxs2 if x not in idxs1]
+    for idx in idxs:
+        temp = pd.Series([0],index=[idx])
+#        temp.index = temp.index.astype('object')
+        freq1 = freq1.append(temp)
+    
+    freq1.sort_index()
+    freq2.sort_index()
+    
+    return scs.chi2_contingency([freq1, freq2])[1]
+
+def t_test(df_col1, df_col2):
+    return scs.ttest_ind(df_col1, df_col2)[1]
 
 def check_boolean(srs, null_val = False):
     
